@@ -1,6 +1,7 @@
 import { db, issueStatus, projectColumn } from '@repo/db';
 import { and, asc, eq, inArray, isNull, sql } from 'drizzle-orm';
 import { iso } from '#shared/lib';
+import { nextIssueEventTime } from './event-time';
 
 // Reads and writes issue_status, the stretches an issue spent in one column.
 // issue.column_id holds only the column it is in now, and the change log records
@@ -22,8 +23,11 @@ export async function recordStatusChange(
     .select({ name: projectColumn.name, stateType: projectColumn.stateType })
     .from(projectColumn)
     .where(eq(projectColumn.id, columnId));
-  const at = enteredAt ?? sql`now()`;
   await db.transaction(async (tx) => {
+    const [timestamp] = enteredAt
+      ? [{ at: iso(enteredAt) }]
+      : await tx.execute<{ at: string }>(sql`select ${nextIssueEventTime(issueIds)}::text as at`);
+    const at = sql`${timestamp.at}::timestamptz`;
     await tx
       .update(issueStatus)
       .set({ leftAt: at })

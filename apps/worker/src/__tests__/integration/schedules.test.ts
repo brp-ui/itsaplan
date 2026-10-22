@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'bun:test';
 import { randomUUID } from 'node:crypto';
 import { db, team, workspace, project, user, aiAgent, agentSchedule, agentRun } from '@repo/db';
-import { eq, inArray } from 'drizzle-orm';
+import { eq, inArray, sql } from 'drizzle-orm';
 import { enqueueDueSchedules } from '../../schedules';
 
 async function makeDueSchedule(teamId: number, agentId: number, archivedAt: Date | null) {
@@ -18,7 +18,7 @@ async function makeDueSchedule(teamId: number, agentId: number, archivedAt: Date
       prompt: 'Summarise',
       cron: '0 9 * * *',
       timezone: 'UTC',
-      nextRunAt: new Date(Date.now() - 1000),
+      nextRunAt: sql`now() - interval '1 second'`,
     })
     .returning({ id: agentSchedule.id });
   return row!.id;

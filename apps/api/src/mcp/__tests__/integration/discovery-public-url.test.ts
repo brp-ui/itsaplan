@@ -20,7 +20,7 @@ interface Answer {
 
 async function discover(): Promise<Map<string, Answer>> {
   const script = `
-    const { app } = await import('${new URL('../../../app.ts', import.meta.url).pathname}');
+    const { app } = await import(${JSON.stringify(new URL('../../../app.ts', import.meta.url).href)});
     const out = {};
     for (const { method, path } of ${JSON.stringify(REQUESTS)}) {
       const res = await app.handle(new Request('http://localhost' + path, {

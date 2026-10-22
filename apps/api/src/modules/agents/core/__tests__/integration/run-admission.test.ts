@@ -1,6 +1,6 @@
 import { describe, it, expect, afterEach, beforeEach } from 'bun:test';
 import { db, agentRun } from '@repo/db';
-import { eq } from 'drizzle-orm';
+import { eq, sql } from 'drizzle-orm';
 import { apiKeyApi, authedApi, createProject } from '#tests/helpers/app';
 import { signUpTestUser } from '#tests/helpers/auth';
 import { resetDb } from '#tests/helpers/db';
@@ -113,7 +113,10 @@ describe('agent run admission', () => {
 
     await processAgentRuns();
     expect(await read(held.id)).toMatchObject({ attempts: 0, startedAt: null });
-    await db.update(agentRun).set({ nextAttemptAt: new Date() }).where(eq(agentRun.id, next.id));
+    await db
+      .update(agentRun)
+      .set({ nextAttemptAt: sql`now()` })
+      .where(eq(agentRun.id, next.id));
     await processAgentRuns();
 
     const second = await read(next.id);

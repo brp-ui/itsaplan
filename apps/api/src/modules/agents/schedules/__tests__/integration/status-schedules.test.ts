@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach } from 'bun:test';
 import { db, agentRun, issue as issueTable } from '@repo/db';
-import { eq } from 'drizzle-orm';
+import { eq, sql } from 'drizzle-orm';
 import { apiKeyApi, authedApi, type Api, createProject } from '#tests/helpers/app';
 import { signUpTestUser } from '#tests/helpers/auth';
 import { resetDb } from '#tests/helpers/db';
@@ -258,7 +258,10 @@ describe('status agent schedules', () => {
     expect(failed.lastError).toContain('Due date');
     expect(failed.nextAttemptAt.getTime()).toBeGreaterThan(Date.now());
 
-    await db.update(agentRun).set({ nextAttemptAt: new Date() }).where(eq(agentRun.id, failed.id));
+    await db
+      .update(agentRun)
+      .set({ nextAttemptAt: sql`now()` })
+      .where(eq(agentRun.id, failed.id));
     const retried = (await asRunner['agent-runs'].claim.post()).data!.run;
     expect(retried).toMatchObject({ id: failed.id, attempts: 2 });
     const after = (await asOwner.issues({ issueId: issue.id }).get()).data!;

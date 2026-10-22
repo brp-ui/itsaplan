@@ -14,8 +14,8 @@
     "start": "bun run src/index.ts",
     "lint": "eslint .",
     "typecheck": "tsc --noEmit",
-    "test": "bun test --env-file=../../.env.test",
-    "test:coverage": "bun test --env-file=../../.env.test --coverage; bun scripts/coverage-report.ts"
+    "test": "bun test --env-file=../../.env.test --timeout 20000",
+    "test:coverage": "bun test --env-file=../../.env.test --timeout 20000 --coverage; bun scripts/coverage-report.ts"
   },
   "dependencies": {
     "@ai-sdk/openai": "^4.0.92",

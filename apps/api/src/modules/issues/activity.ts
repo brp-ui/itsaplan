@@ -24,6 +24,7 @@ import {
   notifyTextMentions,
 } from '#modules/notifications/service';
 import { listStatusTimeline } from './status-history';
+import { nextIssueEventTime } from './event-time';
 
 // Issue timeline: comments and change-log activity in one table (issue_activity).
 // kind selects which columns a row uses. The author is the session user
@@ -344,6 +345,7 @@ export async function createComment(input: {
     .values({
       issueId: input.issueId,
       kind: 'comment',
+      createdAt: nextIssueEventTime([input.issueId]),
       replyToId,
       actorUserId,
       actorName,
@@ -591,6 +593,7 @@ export async function recordActivityEntries(
       entries.map(({ issueId, event: { action, ...payload } }) => ({
         issueId,
         kind: 'activity' as const,
+        createdAt: nextIssueEventTime([issueId]),
         actorUserId: resolvedActorId,
         actorName,
         action,

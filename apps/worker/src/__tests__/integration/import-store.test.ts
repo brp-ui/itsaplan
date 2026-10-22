@@ -15,7 +15,7 @@ import {
   STORAGE_SETTING_KEY,
   type StorageSettings,
 } from '@repo/db';
-import { eq } from 'drizzle-orm';
+import { eq, sql } from 'drizzle-orm';
 import { encryptSecret } from '@repo/crypto';
 import { getObject } from '@repo/storage';
 import { readerForJob, sourceProjectKeyForJob } from '../../import-sources';
@@ -97,7 +97,11 @@ describe('claimDueImportJobs', () => {
     const jobId = await makeImportJob(projectId, userId);
     await db
       .update(importJob)
-      .set({ attempts: 3, lastError: 'rate limited', nextAttemptAt: new Date(Date.now() - 1000) })
+      .set({
+        attempts: 3,
+        lastError: 'rate limited',
+        nextAttemptAt: sql`now() - interval '1 second'`,
+      })
       .where(eq(importJob.id, jobId));
 
     // A large limit, not 1: other due jobs can be sitting in the shared test
@@ -109,9 +113,15 @@ describe('claimDueImportJobs', () => {
 
     expect(job).toBeDefined();
     expect(job!.attempts).toBe(4);
-    const [row] = await db.select().from(importJob).where(eq(importJob.id, jobId));
+    const [row] = await db
+      .select({
+        lastError: importJob.lastError,
+        leaseInFuture: sql<boolean>`${importJob.nextAttemptAt} > now()`,
+      })
+      .from(importJob)
+      .where(eq(importJob.id, jobId));
     expect(row!.lastError).toBeNull();
-    expect(row!.nextAttemptAt.getTime()).toBeGreaterThan(Date.now());
+    expect(row!.leaseInFuture).toBe(true);
   });
 
   it('does not claim a job whose next attempt is still in the future', async () => {
@@ -119,7 +129,7 @@ describe('claimDueImportJobs', () => {
     const jobId = await makeImportJob(projectId, userId);
     await db
       .update(importJob)
-      .set({ nextAttemptAt: new Date(Date.now() + 60_000) })
+      .set({ nextAttemptAt: sql`now() + interval '1 minute'` })
       .where(eq(importJob.id, jobId));
 
     const claimed = await claimDueImportJobs(50);
@@ -131,7 +141,7 @@ describe('claimDueImportJobs', () => {
     const jobId = await makeImportJob(projectId, userId);
     await db
       .update(importJob)
-      .set({ status: 'paused', nextAttemptAt: new Date(Date.now() - 1000) })
+      .set({ status: 'paused', nextAttemptAt: sql`now() - interval '1 second'` })
       .where(eq(importJob.id, jobId));
 
     const claimed = await claimDueImportJobs(50);
@@ -149,7 +159,7 @@ describe('import_job source', () => {
         createdByUserId: userId,
         source: 'linear',
         config: { teamId: 'team-1', teamKey: 'ATO', projectFilter: 'none', projectId: null },
-        nextAttemptAt: new Date(Date.now() - 1000),
+        nextAttemptAt: sql`now() - interval '1 second'`,
       })
       .returning({ id: importJob.id });
 
@@ -171,7 +181,7 @@ describe('import_job source', () => {
 async function claimJob(jobId: number): Promise<number> {
   await db
     .update(importJob)
-    .set({ nextAttemptAt: new Date(Date.now() - 1000) })
+    .set({ nextAttemptAt: sql`now() - interval '1 second'` })
     .where(eq(importJob.id, jobId));
   const claimed = await claimDueImportJobs(1000);
   return claimed.find((j) => j.id === jobId)!.attempts;
@@ -246,7 +256,7 @@ describe('decryptImportCredential', () => {
         credentialCiphertext: encrypted.ciphertext,
         credentialIv: encrypted.iv,
         credentialAuthTag: encrypted.authTag,
-        nextAttemptAt: new Date(Date.now() - 1000),
+        nextAttemptAt: sql`now() - interval '1 second'`,
       })
       .returning({ id: importJob.id });
 

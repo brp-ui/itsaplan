@@ -6,6 +6,8 @@
 .gitignore
 **/.env
 **/.env.local
+**/.env.test
+**/.workspace
 **/*.log
 **/.DS_Store
 README.md
