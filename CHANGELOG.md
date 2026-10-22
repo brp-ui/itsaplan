@@ -1,5 +1,18 @@
 # Changelog
 
+## [1.5.1](https://github.com/brp-ui/itsaplan/compare/v1.5.0...v1.5.1) (2026-10-22)
+
+
+### Bug Fixes
+
+* patch audited dependencies and bootstrap fork releases ([c14e958](https://github.com/brp-ui/itsaplan/commit/c14e958f57e4367db82f69609c64477d6f3ba91c))
+* preserve issue event order and stabilize integration tests ([9425ad8](https://github.com/brp-ui/itsaplan/commit/9425ad833f8464b92d4e64cc24ce84d17ea42f45))
+
+
+### CI
+
+* run checks after enabling fork workflows ([942d9b5](https://github.com/brp-ui/itsaplan/commit/942d9b5af0f609a345c0f7bf24ce3b79a4fd3e76))
+
 ## [1.5.0](https://github.com/croffasia/itsaplan/compare/v1.4.0...v1.5.0) (2026-10-13)
 
 
