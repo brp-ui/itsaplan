@@ -38,6 +38,8 @@
     "packages/*"
   ],
   "overrides": {
+    "@modelcontextprotocol/server": "2.3.0",
+    "markdown-it": "14.3.3",
     "@scalar/types": "0.16.2",
     "@scalar/themes": "0.16.2"
   }
